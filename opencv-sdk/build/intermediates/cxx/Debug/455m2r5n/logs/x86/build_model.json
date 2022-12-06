@@ -1,0 +1,171 @@
+{
+  "abi": "X86",
+  "info": {
+    "abi": "X86",
+    "bitness": 32,
+    "deprecated": false,
+    "default": true
+  },
+  "cxxBuildFolder": "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/.cxx/Debug/455m2r5n/x86",
+  "soFolder": "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/build/intermediates/cxx/Debug/455m2r5n/obj/x86",
+  "soRepublishFolder": "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/build/intermediates/cmake/debug/obj/x86",
+  "abiPlatformVersion": 21,
+  "cmake": {
+    "effectiveConfiguration": {
+      "inheritEnvironments": [],
+      "variables": []
+    }
+  },
+  "variant": {
+    "buildSystemArgumentList": [
+      "-DANDROID_STL\u003dc++_shared"
+    ],
+    "cFlagsList": [],
+    "cppFlagsList": [],
+    "variantName": "debug",
+    "isDebuggableEnabled": true,
+    "validAbiList": [
+      "ARMEABI_V7A",
+      "ARM64_V8A",
+      "X86",
+      "X86_64"
+    ],
+    "buildTargetSet": [
+      "opencv_jni_shared"
+    ],
+    "implicitBuildTargetSet": [],
+    "cmakeSettingsConfiguration": "android-gradle-plugin-predetermined-name",
+    "module": {
+      "cxxFolder": "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/.cxx",
+      "intermediatesBaseFolder": "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/build/intermediates",
+      "intermediatesFolder": "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/build/intermediates/cxx",
+      "gradleModulePathName": ":opencv-sdk",
+      "moduleRootFolder": "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk",
+      "moduleBuildFile": "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/build.gradle",
+      "makeFile": "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/libcxx_helper/CMakeLists.txt",
+      "buildSystem": "CMAKE",
+      "ndkFolder": "/Users/remi.dormoy/Library/Android/sdk/ndk/23.1.7779620",
+      "ndkVersion": "23.1.7779620",
+      "ndkSupportedAbiList": [
+        "ARMEABI_V7A",
+        "ARM64_V8A",
+        "X86",
+        "X86_64"
+      ],
+      "ndkDefaultAbiList": [
+        "ARMEABI_V7A",
+        "ARM64_V8A",
+        "X86",
+        "X86_64"
+      ],
+      "ndkDefaultStl": "LIBCXX_STATIC",
+      "ndkMetaPlatforms": {
+        "min": 16,
+        "max": 31,
+        "aliases": {
+          "20": 19,
+          "25": 24,
+          "J": 16,
+          "J-MR1": 17,
+          "J-MR2": 18,
+          "K": 19,
+          "L": 21,
+          "L-MR1": 22,
+          "M": 23,
+          "N": 24,
+          "N-MR1": 24,
+          "O": 26,
+          "O-MR1": 27,
+          "P": 28,
+          "Q": 29,
+          "R": 30,
+          "S": 31
+        }
+      },
+      "ndkMetaAbiList": [
+        {
+          "abi": "ARMEABI_V7A",
+          "bitness": 32,
+          "deprecated": false,
+          "default": true
+        },
+        {
+          "abi": "ARM64_V8A",
+          "bitness": 64,
+          "deprecated": false,
+          "default": true
+        },
+        {
+          "abi": "X86",
+          "bitness": 32,
+          "deprecated": false,
+          "default": true
+        },
+        {
+          "abi": "X86_64",
+          "bitness": 64,
+          "deprecated": false,
+          "default": true
+        }
+      ],
+      "cmakeToolchainFile": "/Users/remi.dormoy/Library/Android/sdk/ndk/23.1.7779620/build/cmake/android.toolchain.cmake",
+      "cmake": {
+        "isValidCmakeAvailable": true,
+        "cmakeExe": "/Users/remi.dormoy/Library/Android/sdk/cmake/3.18.1/bin/cmake",
+        "minimumCmakeVersion": "3.18.1"
+      },
+      "stlSharedObjectMap": {
+        "LIBCXX_SHARED": {
+          "ARMEABI_V7A": "/Users/remi.dormoy/Library/Android/sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/darwin-x86_64/sysroot/usr/lib/arm-linux-androideabi/libc++_shared.so",
+          "ARM64_V8A": "/Users/remi.dormoy/Library/Android/sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/darwin-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so",
+          "X86": "/Users/remi.dormoy/Library/Android/sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/darwin-x86_64/sysroot/usr/lib/i686-linux-android/libc++_shared.so",
+          "X86_64": "/Users/remi.dormoy/Library/Android/sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/darwin-x86_64/sysroot/usr/lib/x86_64-linux-android/libc++_shared.so"
+        },
+        "LIBCXX_STATIC": {},
+        "NONE": {},
+        "SYSTEM": {}
+      },
+      "project": {
+        "rootBuildGradleFolder": "/Users/remi.dormoy/Projects/OpenCVroot",
+        "sdkFolder": "/Users/remi.dormoy/Library/Android/sdk",
+        "isBuildOnlyTargetAbiEnabled": true,
+        "isCmakeBuildCohabitationEnabled": false,
+        "isPrefabEnabled": false
+      },
+      "outputOptions": [],
+      "ninjaExe": "/Users/remi.dormoy/Library/Android/sdk/cmake/3.18.1/bin/ninja"
+    },
+    "prefabClassPaths": [],
+    "prefabPackages": [],
+    "prefabPackageConfigurations": [],
+    "stlType": "c++_shared",
+    "optimizationTag": "Debug"
+  },
+  "buildSettings": {
+    "environmentVariables": []
+  },
+  "prefabFolder": "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/.cxx/Debug/455m2r5n/prefab/x86",
+  "isActiveAbi": true,
+  "fullConfigurationHash": "455m2r5n2e4l5u462q6ng5lz623es6r494s2g1n1n1l1q5s66144l1b4ao",
+  "configurationArguments": [
+    "-H/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/libcxx_helper",
+    "-DCMAKE_SYSTEM_NAME\u003dAndroid",
+    "-DCMAKE_EXPORT_COMPILE_COMMANDS\u003dON",
+    "-DCMAKE_SYSTEM_VERSION\u003d21",
+    "-DANDROID_PLATFORM\u003dandroid-21",
+    "-DANDROID_ABI\u003dx86",
+    "-DCMAKE_ANDROID_ARCH_ABI\u003dx86",
+    "-DANDROID_NDK\u003d/Users/remi.dormoy/Library/Android/sdk/ndk/23.1.7779620",
+    "-DCMAKE_ANDROID_NDK\u003d/Users/remi.dormoy/Library/Android/sdk/ndk/23.1.7779620",
+    "-DCMAKE_TOOLCHAIN_FILE\u003d/Users/remi.dormoy/Library/Android/sdk/ndk/23.1.7779620/build/cmake/android.toolchain.cmake",
+    "-DCMAKE_MAKE_PROGRAM\u003d/Users/remi.dormoy/Library/Android/sdk/cmake/3.18.1/bin/ninja",
+    "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY\u003d/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/build/intermediates/cxx/Debug/455m2r5n/obj/x86",
+    "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY\u003d/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/build/intermediates/cxx/Debug/455m2r5n/obj/x86",
+    "-DCMAKE_BUILD_TYPE\u003dDebug",
+    "-B/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/.cxx/Debug/455m2r5n/x86",
+    "-GNinja",
+    "-DANDROID_STL\u003dc++_shared"
+  ],
+  "stlLibraryFile": "/Users/remi.dormoy/Library/Android/sdk/ndk/23.1.7779620/toolchains/llvm/prebuilt/darwin-x86_64/sysroot/usr/lib/i686-linux-android/libc++_shared.so",
+  "intermediatesParentFolder": "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/build/intermediates/cxx/Debug/455m2r5n"
+}

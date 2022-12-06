@@ -1,0 +1,27 @@
+{
+  "buildFiles": [
+    "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/libcxx_helper/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/remi.dormoy/Library/Android/sdk/cmake/3.18.1/bin/ninja",
+      "-C",
+      "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/.cxx/Debug/455m2r5n/x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/remi.dormoy/Library/Android/sdk/cmake/3.18.1/bin/ninja",
+    "-C",
+    "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/.cxx/Debug/455m2r5n/x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "opencv_jni_shared::@6890427a1f51a3e7e1df": {
+      "artifactName": "opencv_jni_shared",
+      "abi": "x86",
+      "output": "/Users/remi.dormoy/Projects/OpenCVroot/opencv-sdk/.cxx/Debug/455m2r5n/x86/libopencv_jni_shared.a",
+      "runtimeFiles": []
+    }
+  }
+}
