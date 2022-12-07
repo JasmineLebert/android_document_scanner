@@ -25,6 +25,7 @@ import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import java.io.File
+import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ExecutorService
@@ -113,7 +114,10 @@ class MainActivity : AppCompatActivity() {
                 File((this.externalCacheDir?.path ?: "") + File.separator + System.currentTimeMillis() + ".jpg")
             val path = file.path
             val path2 = savedUri.path;
-            val bitmap = BitmapFactory.decodeFile(savedUri.encodedPath + ".jpg")
+            //val bitmap = BitmapFactory.decodeFile(savedUri.encodedPath + ".jpg")
+            val path3 = savedUri.scheme
+           val inputStream: InputStream? = contentResolver.openInputStream(savedUri)
+           val bitmap = BitmapFactory.decodeStream(inputStream)
             findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(bitmap)
             findViewById<ImageView>(R.id.viewImageForBitmap).visibility = View.VISIBLE
             findViewById<PreviewView>(R.id.viewFinder).visibility = View.GONE
