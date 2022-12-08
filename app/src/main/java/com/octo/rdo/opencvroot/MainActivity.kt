@@ -2,15 +2,20 @@ package com.octo.rdo.opencvroot
 
 import android.Manifest.permission.*
 import android.content.ContentValues
+import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
+import android.graphics.*
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.AttributeSet
 import android.util.Log
+import android.view.Gravity
 import android.view.View
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -19,11 +24,18 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.Recorder
-import androidx.camera.video.Recording
-import androidx.camera.video.VideoCapture
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import com.octo.rdo.opencvroot.documentscanner.libraries.NativeClass
+import com.octo.rdo.opencvroot.documentscanner.libraries.PolygonView
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import org.opencv.android.OpenCVLoader
+import org.opencv.android.Utils
+import org.opencv.core.CvType
+import org.opencv.core.Mat
+import org.opencv.core.MatOfPoint2f
+import org.opencv.imgproc.Imgproc
 import java.io.File
 import java.io.InputStream
 import java.text.SimpleDateFormat
@@ -31,16 +43,9 @@ import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-typealias LumaListener = (luma: Double) -> Unit
-
-
 class MainActivity : AppCompatActivity() {
 
     private var imageCapture: ImageCapture? = null
-
-    private var videoCapture: VideoCapture<Recorder>? = null
-    private var recording: Recording? = null
-
     private lateinit var cameraExecutor: ExecutorService
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,7 +62,6 @@ class MainActivity : AppCompatActivity() {
 
         // Set up the listeners for take photo and video capture buttons
         findViewById<Button>(R.id.image_capture_button).setOnClickListener { takePhoto() }
-        findViewById<Button>(R.id.video_capture_button).setOnClickListener { captureVideo() }
 
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
@@ -98,10 +102,27 @@ class MainActivity : AppCompatActivity() {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     val msg = "Photo capture succeeded: ${output.savedUri}"
                     Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
+                    if (!OpenCVLoader.initDebug()) {
+                        Toast.makeText(
+                            baseContext,
+                            "OpenCVLoader.initDebug(), not working.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        Log.e("OpenCV not work.", "")
+                    } else {
+                        Toast.makeText(
+                            baseContext,
+                            "OpenCVLoader.initDebug(), working.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        Log.e("OpenCV working.", "")
+                    }
                     Log.d(TAG, msg)
                     output.savedUri?.let {
                         switchToImagePreview(it)
                     }
+                    cameraExecutor = Executors.newSingleThreadExecutor()
+
                 }
             }
         )
@@ -111,26 +132,58 @@ class MainActivity : AppCompatActivity() {
         try {
             //val path = File(savedUri.path).path
             val file: File =
-                File((this.externalCacheDir?.path ?: "") + File.separator + System.currentTimeMillis() + ".jpg")
+                File(
+                    (this.externalCacheDir?.path
+                        ?: "") + File.separator + System.currentTimeMillis() + ".jpg"
+                )
             val path = file.path
             val path2 = savedUri.path;
             //val bitmap = BitmapFactory.decodeFile(savedUri.encodedPath + ".jpg")
             val path3 = savedUri.scheme
-           val inputStream: InputStream? = contentResolver.openInputStream(savedUri)
-           val bitmap = BitmapFactory.decodeStream(inputStream)
+            val inputStream: InputStream? = contentResolver.openInputStream(savedUri)
+            val bitmap = BitmapFactory.decodeStream(inputStream)
             findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(bitmap)
             findViewById<ImageView>(R.id.viewImageForBitmap).visibility = View.VISIBLE
             findViewById<PreviewView>(R.id.viewFinder).visibility = View.GONE
+           // detectEdges(bitmap)
+            initializeCropping(bitmap)
         } catch (e: Throwable) {
             Log.e("YOLO YOLO", null, e)
         }
     }
 
-    private fun captureVideo() {}
+    private fun detectEdges(bitmap: Bitmap) {
+        val rgba = Mat()
+        Utils.bitmapToMat(bitmap, rgba)
+        val edges = Mat(rgba.size(), CvType.CV_8UC1)
+
+        // filtre color
+        Imgproc.cvtColor(rgba, edges, Imgproc.COLOR_RGB2GRAY, 4)
+        val contour = getContourEdgePoints(bitmap)
+        Log.e("YOLO, YOLO", "CONTOUR $contour")
+        val squareView = findViewById<DrawView>(R.id.viewImageForBitmapSquare)
+        squareView.setSquare(200f, 400f, 250f, 400f)
+
+        // detect edge - but not in image
+        Imgproc.Canny(
+            edges, // 8-bit source image
+            edges,//output edge map; single channels 8-bit image, which has the same size as image
+            80.0,
+            100.0
+        )
+
+
+        findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(bitmap)
+        //findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(newBitmap)
+        val resultBitmap: Bitmap =
+            Bitmap.createBitmap(edges.cols(), edges.rows(), Bitmap.Config.ARGB_8888)
+        Utils.matToBitmap(edges, resultBitmap)
+        // findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(resultBitmap)
+        // findViewById<ImageView>(R.id.viewImageForBitmap).visibility = View.VISIBLE
+    }
 
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-
         Log.e("YOLO, YOLO", "JE suis sensé avoir démarré la caméra")
         cameraProviderFuture.addListener({
             val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
@@ -161,6 +214,96 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
+    private  fun initializeCropping(selectedImageBitmap: Bitmap) {
+        val polygonView = findViewById<PolygonView>(R.id.polygon_view)
+        val imageView = findViewById<ImageView>(R.id.viewImageForBitmap)
+        val scaledBitmap: Bitmap = scaledBitmap2(
+            selectedImageBitmap,
+            imageView.width,
+            imageView.height
+        )//.first()
+        imageView.setImageBitmap(scaledBitmap)
+        //imageView.setImageBitmap(selectedImageBitmap)
+        val tempBitmap = (imageView.drawable as BitmapDrawable).bitmap
+        val pointFs = getEdgePoints(tempBitmap, polygonView)
+        Log.e("YOLO, YOLO width", tempBitmap.width.toString())
+        Log.e("YOLO, YOLO height", tempBitmap.height.toString())
+        Log.e("YOLO, YOLO height", pointFs.toString())
+        polygonView.points = pointFs
+        polygonView.visibility = View.VISIBLE
+        val padding = resources.getDimension(R.dimen.scanPadding).toInt() * 2
+        val layoutParams = FrameLayout.LayoutParams(tempBitmap.width + padding, tempBitmap.height + padding)
+       // val layoutParams = FrameLayout.LayoutParams(imageView.width, imageView.height)
+        Log.e("YOLO, YOLO", "CONTOUR ${imageView.width/4}")
+        Log.e("YOLO, YOLO", "CONTOUR ${imageView.height/4}")
+        layoutParams.gravity = Gravity.CENTER
+        polygonView.layoutParams = layoutParams
+        polygonView.setPointColor(Color.BLUE)
+    }
+
+    private fun scaledBitmap2(bitmap: Bitmap, width: Int, height: Int) : Bitmap {
+        val m = Matrix()
+        m.setRectToRect(
+            RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat()), RectF(
+                0f, 0f,
+                width.toFloat(),
+                height.toFloat()
+            ), Matrix.ScaleToFit.CENTER
+        )
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, m, true)
+    }
+    private fun scaledBitmap(bitmap: Bitmap, width: Int, height: Int) = flow<Bitmap> {
+        val m = Matrix()
+        m.setRectToRect(
+            RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat()), RectF(
+                0f, 0f,
+                width.toFloat(),
+                height.toFloat()
+            ), Matrix.ScaleToFit.CENTER
+        )
+        emit(Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, m, true))
+    }
+
+    private fun getEdgePoints(tempBitmap: Bitmap, polygonView: PolygonView): Map<Int, PointF>? {
+        val pointFs: List<PointF> = getContourEdgePoints(tempBitmap)
+        return orderedValidEdgePoints(polygonView, tempBitmap, pointFs)
+    }
+
+    private fun getContourEdgePoints(tempBitmap: Bitmap): List<PointF> {
+        var point2f = NativeClass().getPoint(tempBitmap)
+        if (point2f == null) point2f = MatOfPoint2f()
+        val points = listOf(*point2f.toArray())
+        val result: MutableList<PointF> = ArrayList()
+        for (i in points.indices) {
+            result.add(PointF(points[i].x.toFloat(), points[i].y.toFloat()))
+       }
+      /*  result.add(0,PointF(0f,0f))
+        result.add(0,PointF(500f,0f))
+        result.add(0,PointF(0f,500f))
+        result.add(0,PointF(500f,500f))*/
+        return result
+    }
+
+    private fun orderedValidEdgePoints(
+        polygonView: PolygonView,
+        tempBitmap: Bitmap,
+        pointFs: List<PointF>
+    ): Map<Int, PointF>? {
+        var orderedPoints: Map<Int, PointF>? = polygonView.getOrderedPoints(pointFs)
+        if (!polygonView.isValidShape(orderedPoints)) {
+            orderedPoints = getOutlinePoints(tempBitmap)
+        }
+        return orderedPoints
+    }
+    private fun getOutlinePoints(tempBitmap: Bitmap): Map<Int, PointF> {
+        val outlinePoints: MutableMap<Int, PointF> = HashMap()
+        outlinePoints[0] = PointF(0f, 0f)
+        outlinePoints[1] = PointF(tempBitmap.width.toFloat(), 0f)
+        outlinePoints[2] = PointF(0f, tempBitmap.height.toFloat())
+        outlinePoints[3] = PointF(tempBitmap.width.toFloat(), tempBitmap.height.toFloat())
+        return outlinePoints
+    }
+
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
     }
@@ -183,5 +326,45 @@ class MainActivity : AppCompatActivity() {
                     add(WRITE_EXTERNAL_STORAGE)
                 }
             }.toTypedArray()
+    }
+}
+
+
+class DrawView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0
+) : View(context, attrs, defStyleAttr) {
+
+    var left = 0f;
+    var right = 0f;
+    var top = 0f;
+    var bottom = 0f;
+
+    var paint: Paint = Paint()
+    public override fun onDraw(canvas: Canvas) {
+        paint.setColor(Color.RED)
+        paint.setStrokeWidth(3f)
+        canvas.drawRect(
+            left,
+            top,
+            right,
+            bottom,
+            paint
+        ) // un carré mais sinon drawpath voir drawable
+        //cf. https://github.com/RemiDormoy/MotionLayoutTest/blob/master/app/src/main/java/com/rdo/octo/motionlayouttest/BlobScreenActivity.kt
+    }
+
+    fun setSquare(
+        left: Float,
+        right: Float,
+        top: Float,
+        bottom: Float
+    ) {
+        this.left = left
+        this.right = right
+        this.top = top
+        this.bottom = bottom
+        invalidate()
     }
 }
