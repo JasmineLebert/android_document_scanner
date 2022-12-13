@@ -363,10 +363,10 @@ class OpenCVUtils {
 
         fun getScannedBitmap(
             bitmap: Bitmap?,
-            point1 : Point,
-            point2 : Point,
-            point3 : Point,
-            point4 : Point,
+            point1: Point,
+            point2: Point,
+            point3: Point,
+            point4: Point,
         ): Bitmap? {
             val perspective =
                 PerspectiveTransformationUtils()
