@@ -2,22 +2,18 @@ package com.octo.rdo.opencvroot.documentscanner.libraries
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
-import android.graphics.PointF
-import android.graphics.RectF
 import com.octo.rdo.opencvroot.documentscanner.helpers.ImageUtils
 import com.octo.rdo.opencvroot.documentscanner.helpers.PerspectiveTransformationUtils
 import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
-import org.opencv.utils.Converters
 import java.util.*
 
 class OpenCVUtils {
     companion object {
         fun getContourEdgePoints(bitmap: Bitmap): List<Point> {
             var hasContour = false
-            var matReceipt = Mat()
-            matReceipt = convertBitmapToMat(bitmap)
+            val matReceipt = convertBitmapToMat(bitmap)
             compressDown(matReceipt, matReceipt)
             compressDown(matReceipt, matReceipt)
 

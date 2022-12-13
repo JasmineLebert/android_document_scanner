@@ -25,13 +25,8 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.octo.rdo.opencvroot.R
-import com.octo.rdo.opencvroot.documentscanner.helpers.ImageUtils
-import com.octo.rdo.opencvroot.documentscanner.libraries.NativeClass
 import com.octo.rdo.opencvroot.documentscanner.libraries.OpenCVUtils
-import com.octo.rdo.opencvroot.documentscanner.helpers.PerspectiveTransformationUtils
 import org.opencv.android.OpenCVLoader
-import org.opencv.core.Mat
-import org.opencv.core.MatOfPoint2f
 import org.opencv.core.Point
 import java.io.InputStream
 import java.text.SimpleDateFormat
@@ -224,18 +219,9 @@ class MainActivity : AppCompatActivity() {
         val pointFs: List<PointF> = if (isCropping) {
             getDocumentContour(tempBitmap)
         } else {
-            getContourEdgePoints(tempBitmap) // contour de l'image view
+            ArrayList() // contour de l'image view
         }
 
-        Log.e("YOLO, YOLO", "CONTOUR : $pointFs")
-        return orderedValidEdgePoints(polygonView, tempBitmap, pointFs)
-    }
-
-    private fun getContourOfBitmap(
-        tempBitmap: Bitmap,
-        polygonView: PolygonView
-    ): Map<Int, PointF>? {
-        val pointFs: List<PointF> = getContourEdgePoints(tempBitmap)
         Log.e("YOLO, YOLO", "CONTOUR : $pointFs")
         return orderedValidEdgePoints(polygonView, tempBitmap, pointFs)
     }
@@ -244,17 +230,6 @@ class MainActivity : AppCompatActivity() {
         return OpenCVUtils.getContourEdgePoints(tempBitmap).map { // contour du document
             PointF(it.x.toFloat(), it.y.toFloat())
         }
-    }
-
-    private fun getContourEdgePoints(tempBitmap: Bitmap): List<PointF> {
-        var point2f = NativeClass().getPoint(tempBitmap)
-        if (point2f == null) point2f = MatOfPoint2f()
-        val points = listOf(*point2f.toArray())
-        val result: MutableList<PointF> = ArrayList()
-        for (i in points.indices) {
-            result.add(PointF(points[i].x.toFloat(), points[i].y.toFloat()))
-        }
-        return result
     }
 
     private fun orderedValidEdgePoints(
