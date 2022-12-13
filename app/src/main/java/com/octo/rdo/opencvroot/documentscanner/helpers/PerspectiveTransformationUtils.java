@@ -1,4 +1,4 @@
-package com.octo.rdo.opencvroot.documentscanner.libraries;
+package com.octo.rdo.opencvroot.documentscanner.helpers;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint2f;
@@ -9,11 +9,7 @@ import org.opencv.imgproc.Imgproc;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PerspectiveTransformation {
-    private static final String DEBUG_TAG = "PerspectiveTransformation";
-
-    public PerspectiveTransformation() {
-    }
+public class PerspectiveTransformationUtils {
 
     public Mat transform(Mat src, MatOfPoint2f corners) {
         MatOfPoint2f sortedCorners = sortCorners(corners);
@@ -98,5 +94,4 @@ public class PerspectiveTransformation {
         }
         return new Point(xSum / len, ySum / len);
     }
-
 }

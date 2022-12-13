@@ -1,4 +1,4 @@
-package com.octo.rdo.opencvroot.documentscanner.libraries;
+package com.octo.rdo.opencvroot.documentscanner.views;
 
 import android.content.Context;
 import android.graphics.Canvas;

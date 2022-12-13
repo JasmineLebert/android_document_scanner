@@ -1,8 +1,6 @@
-package com.octo.rdo.opencvroot
+package com.octo.rdo.opencvroot.documentscanner.views
 
 import android.Manifest.permission.*
-import android.R.attr.x
-import android.R.attr.y
 import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.graphics.*
@@ -26,10 +24,11 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import com.octo.rdo.opencvroot.R
 import com.octo.rdo.opencvroot.documentscanner.helpers.ImageUtils
 import com.octo.rdo.opencvroot.documentscanner.libraries.NativeClass
-import com.octo.rdo.opencvroot.documentscanner.libraries.PerspectiveTransformation
-import com.octo.rdo.opencvroot.documentscanner.libraries.PolygonView
+import com.octo.rdo.opencvroot.documentscanner.libraries.OpenCVUtils
+import com.octo.rdo.opencvroot.documentscanner.helpers.PerspectiveTransformationUtils
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
 import org.opencv.core.CvType
@@ -148,6 +147,8 @@ class MainActivity : AppCompatActivity() {
             findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(bitmap)
             findViewById<ImageView>(R.id.viewImageForBitmap).visibility = View.VISIBLE
             findViewById<PreviewView>(R.id.viewFinder).visibility = View.GONE
+            //val rotateBitmap = OpenCVUtils.rotate(bitmap, 90)
+            //initializeCropping(rotateBitmap)
             initializeCropping(bitmap)
         } catch (e: Throwable) {
             Log.e("YOLO YOLO", null, e)
@@ -244,23 +245,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getDocumentContour(tempBitmap: Bitmap): List<PointF> {
-        val rgba = Mat()
-        Utils.bitmapToMat(tempBitmap, rgba)
-        val edges = Mat(rgba.size(), CvType.CV_8UC1)
-        Imgproc.cvtColor(rgba, edges, Imgproc.COLOR_RGB2GRAY, 4) // change color of image
-        Imgproc.Canny(
-            edges, // 8-bit source image
-            edges,//output edge map; single channels 8-bit image, which has the same size as image
-            80.0,
-            100.0
-        )
-
-        val resultBitmap: Bitmap =
-            Bitmap.createBitmap(edges.cols(), edges.rows(), Bitmap.Config.ARGB_8888)
-        Utils.matToBitmap(edges, resultBitmap)
-        //findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(resultBitmap) //TMP
-
-        return OpenCVUtils.getContourEdgePoints(resultBitmap).map { // contour du document
+        return OpenCVUtils.getContourEdgePoints(tempBitmap).map { // contour du document
             PointF(it.x.toFloat(), it.y.toFloat())
         }
     }
@@ -341,17 +326,18 @@ class MainActivity : AppCompatActivity() {
           //val cropped : Mat = org.opencv.core.Mat(uncropped, roi)
 
           return ImageUtils.matToBitmap(cropped)*/
-        val perspective = PerspectiveTransformation()
+        Log.e("YOLO, YOLO", "CONTOUR POINT $x1, $y1, $x2, $y2, $x3, $y3, $x4, $y4")
+        val perspective =
+            PerspectiveTransformationUtils()
         val rectangle = MatOfPoint2f()
         rectangle.fromArray(
-            Point(x1.toDouble(), y1.toDouble()), Point(
-                x2.toDouble(), y2.toDouble()
-            ), Point(x3.toDouble(), y3.toDouble()), Point(
-                x4.toDouble(),
-                y4.toDouble()
-            )
+            Point(x1.toDouble(), y1.toDouble()),
+            Point(x2.toDouble(), y2.toDouble()),
+            Point(x4.toDouble(), y4.toDouble()),
+            Point(x3.toDouble(), y3.toDouble()),
         )
         val dstMat: Mat = perspective.transform(ImageUtils.bitmapToMat(bitmap), rectangle)
+
         return ImageUtils.matToBitmap(dstMat)
     }
 

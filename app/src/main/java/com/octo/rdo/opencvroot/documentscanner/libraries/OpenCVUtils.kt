@@ -1,4 +1,4 @@
-package com.octo.rdo.opencvroot
+package com.octo.rdo.opencvroot.documentscanner.libraries
 
 import android.graphics.Bitmap
 import android.graphics.Matrix
@@ -22,22 +22,18 @@ class OpenCVUtils {
             // Resize and convert to grayscale
             val matConvertedGray = Mat()
             Imgproc.cvtColor(matReceipt, matConvertedGray, Imgproc.COLOR_BGR2GRAY)
-//        Bitmap ex1 = convertMatToBitmap(matConvertedGray);
 
             // Get threshold for helping Canny method do more exactly
             val otsuThresold =
                 Imgproc.threshold(matConvertedGray, Mat(), 0.0, 255.0, Imgproc.THRESH_OTSU)
-//        Bitmap ex21 = convertMatToBitmap(bw);
 
             // Reduce noise
             val matMedianFilter = Mat()
             Imgproc.medianBlur(matConvertedGray, matMedianFilter, 11)
-//        Bitmap ex4 = convertMatToBitmap(medianFilter);
 
             // Draw receipt with only lines
             val matEdges = Mat()
             Imgproc.Canny(matConvertedGray, matEdges, otsuThresold * 0.05, otsuThresold)
-//        Bitmap ex6 = convertMatToBitmap(edges);
 
             // Find contour of Object
             val contours = ArrayList<MatOfPoint>()
@@ -52,7 +48,6 @@ class OpenCVUtils {
             val height = matConvertedGray.height()
             val width = matConvertedGray.width()
 
-            //Initial maxAreaFound. The variable is used to find max area of contour
             var maxAreaFound = ((width - 20) * (height - 20) / 20).toDouble()
 
             val myPoints = arrayOf(
@@ -93,20 +88,11 @@ class OpenCVUtils {
                     receiptContour = mopOut
 
                     hasContour = true
-
-                    //                List<MatOfPoint> contours1 = new ArrayList<>();
-                    //                contours1.add(mopOut);
-                    //                Scalar color = new Scalar(216, 112, 112);
-                    //                Imgproc.drawContours(matReceipt, contours1, 0, color, 2, 8, new Mat(), 0, new Point());
-                    //                Bitmap ex24 = convertMatToBitmap(matReceipt);
-                    //                Log.d("ABC", "ABC");
                 }
             }
 
             // Use moments to find centroid of convex
             val centrePoint = getCentrePointOfContour(receiptContour)
-//        Core.circle(matReceipt, centrePoint, (int) 2, new Scalar(112, 112, 112), 2);
-//        Bitmap ex24 = convertMatToBitmap(matReceipt);
             // These variable to help find corner of skew receipt more exactly
             val listPoints = receiptContour.toList()
             if (listPoints == null || listPoints.size < 4) {
@@ -144,11 +130,6 @@ class OpenCVUtils {
                 cornerPoints.add(pointBL)
             }
 
-//        for (int i = 0; i < cornerPoints.size(); i++) {
-//            Core.circle(matReceipt, cornerPoints.get(i), (int) 2, new Scalar(112, 112, 112), 2);
-//        }
-//        Bitmap ex241 = convertMatToBitmap(matReceipt);
-
             if (hasContour) {
                 val pyrDownReceipt = convertMatToBitmap(matReceipt)
                 val widthRatio = bitmap.getWidth().toDouble() / pyrDownReceipt.width.toDouble()
@@ -164,47 +145,7 @@ class OpenCVUtils {
             }
         }
 
-        /*   fun getEdgePoints(bitmap: Bitmap, polygonView: PolygonView): Map<Int, Point>? {
-               val pointFs = getContourEdgePoints(bitmap)
-               return orderedValidEdgePoints(bitmap, pointFs, polygonView)
-           }*/
-
-        private fun getOutlinePoints(bitmap: Bitmap): Map<Int, Point> {
-            val outlinePoints = HashMap<Int, Point>()
-            outlinePoints.put(0, Point(0f.toDouble(), 0f.toDouble()))
-            outlinePoints.put(1, Point(bitmap.width.toDouble(), 0f.toDouble()))
-            outlinePoints.put(2, Point(0f.toDouble(), bitmap.height.toDouble()))
-            outlinePoints.put(3, Point(bitmap.width.toDouble(), bitmap.height.toDouble()))
-            return outlinePoints
-        }
-
-        /*    private fun orderedValidEdgePoints(
-                bitmap: Bitmap,
-                pointFs: List<Point>?,
-                polygonView: PolygonView
-            ): Map<Int, Point> {
-                var orderedPoints = polygonView.getOrderedPoints(pointFs)
-                if (!polygonView.isValidShape(orderedPoints!!)) {
-                    orderedPoints = getOutlinePoints(bitmap)
-                }
-                return orderedPoints
-            }*/
-
-        private fun isScanPointsValid(points: Map<Int, PointF>): Boolean {
-            return points.size == 4
-        }
-
-        private fun scaledBitmap(bitmap: Bitmap?, width: Int, height: Int): Bitmap {
-            val m = Matrix()
-            m.setRectToRect(
-                RectF(0f, 0f, bitmap!!.width.toFloat(), bitmap.height.toFloat()),
-                RectF(0f, 0f, width.toFloat(), height.toFloat()),
-                Matrix.ScaleToFit.CENTER
-            )
-            return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, m, true)
-        }
-
-        fun getMaxX(pointList: List<Point>?): Double {
+        private fun getMaxX(pointList: List<Point>?): Double {
             if (pointList == null || pointList.size == 0) {
                 return 0.0
             }
@@ -219,7 +160,7 @@ class OpenCVUtils {
             return pointList[pos].x
         }
 
-        fun getMinX(pointList: List<Point>?): Double {
+        private fun getMinX(pointList: List<Point>?): Double {
             if (pointList == null || pointList.size == 0) {
                 return 0.0
             }
@@ -234,7 +175,7 @@ class OpenCVUtils {
             return pointList[pos].x
         }
 
-        fun getMinY(pointList: List<Point>?): Double {
+        private fun getMinY(pointList: List<Point>?): Double {
             if (pointList == null || pointList.size == 0) {
                 return 0.0
             }
@@ -249,7 +190,7 @@ class OpenCVUtils {
             return pointList[pos].y
         }
 
-        fun getMaxY(pointList: List<Point>?): Double {
+        private fun getMaxY(pointList: List<Point>?): Double {
             if (pointList == null || pointList.size == 0) {
                 return 0.0
             }
@@ -264,7 +205,7 @@ class OpenCVUtils {
             return pointList[pos].y
         }
 
-        fun getPointTlWithMaxLength(
+        private fun getPointTlWithMaxLength(
             listPointInContour: List<Point>?,
             centrePoint: Point,
             espX: Double,
@@ -272,7 +213,6 @@ class OpenCVUtils {
         ): Point? {
             if (listPointInContour == null || listPointInContour.size == 0)
                 return null
-            //        Point centrePoint = getCentrePoint(listPointInContour);
             var maxLength = 0.0
             var pos = 0
             for (i in listPointInContour.indices) {
@@ -286,7 +226,7 @@ class OpenCVUtils {
             return listPointInContour[pos]
         }
 
-        fun getPointTrWithMaxLength(
+        private fun getPointTrWithMaxLength(
             listPointInContour: List<Point>?,
             centrePoint: Point,
             espX: Double,
@@ -294,7 +234,6 @@ class OpenCVUtils {
         ): Point? {
             if (listPointInContour == null || listPointInContour.size == 0)
                 return null
-            //        Point centrePoint = getCentrePoint(listPointInContour);
             var maxLength = 0.0
             var pos = 0
             for (i in listPointInContour.indices) {
@@ -308,7 +247,7 @@ class OpenCVUtils {
             return listPointInContour[pos]
         }
 
-        fun getPointBrWithMaxLength(
+        private fun getPointBrWithMaxLength(
             listPointInContour: List<Point>?,
             centrePoint: Point,
             espX: Double,
@@ -316,7 +255,6 @@ class OpenCVUtils {
         ): Point? {
             if (listPointInContour == null || listPointInContour.size == 0)
                 return null
-            //        Point centrePoint = getCentrePoint(listPointInContour);
             var maxLength = 0.0
             var pos = 0
             for (i in listPointInContour.indices) {
@@ -330,7 +268,7 @@ class OpenCVUtils {
             return listPointInContour[pos]
         }
 
-        fun getPointBlWithMaxLength(
+        private fun getPointBlWithMaxLength(
             listPointInContour: List<Point>?,
             centrePoint: Point,
             espX: Double,
@@ -338,7 +276,6 @@ class OpenCVUtils {
         ): Point? {
             if (listPointInContour == null || listPointInContour.size == 0)
                 return null
-            //        Point centrePoint = getCentrePoint(listPointInContour);
             var maxLength = 0.0
             var pos = 0
             for (i in listPointInContour.indices) {
@@ -352,7 +289,7 @@ class OpenCVUtils {
             return listPointInContour[pos]
         }
 
-        fun getDistanceBetweenPoints(point1: Point, point2: Point): Double {
+        private fun getDistanceBetweenPoints(point1: Point, point2: Point): Double {
             return Math.sqrt((point1.x - point2.x) * (point1.x - point2.x) + (point1.y - point2.y) * (point1.y - point2.y))
         }
 
@@ -386,7 +323,7 @@ class OpenCVUtils {
             }
         }
 
-        fun getCentrePointOfContour(contour: MatOfPoint): Point? {
+        private fun getCentrePointOfContour(contour: MatOfPoint): Point? {
             val moments = Imgproc.moments(contour)
             return if (moments != null) {
                 Point(moments._m10 / moments._m00, moments._m01 / moments._m00)
@@ -546,6 +483,5 @@ class OpenCVUtils {
             }
             return listPoint[minXPos]
         }
-
     }
 }

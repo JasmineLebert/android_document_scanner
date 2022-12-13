@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".documentscanner.views.MainActivity">
 
     <androidx.camera.view.PreviewView
         android:id="@+id/viewFinder"
@@ -24,7 +24,7 @@
             android:layout_height="match_parent"
             android:visibility="visible" />
 
-        <com.octo.rdo.opencvroot.documentscanner.libraries.PolygonView
+        <com.octo.rdo.opencvroot.documentscanner.views.PolygonView
             android:id="@+id/polygon_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
