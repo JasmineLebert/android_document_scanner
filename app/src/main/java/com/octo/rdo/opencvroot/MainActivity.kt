@@ -1,8 +1,9 @@
 package com.octo.rdo.opencvroot
 
 import android.Manifest.permission.*
+import android.R.attr.x
+import android.R.attr.y
 import android.content.ContentValues
-import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
@@ -10,7 +11,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.AttributeSet
 import android.util.Log
 import android.view.Gravity
 import android.view.View
@@ -26,21 +26,23 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import com.octo.rdo.opencvroot.documentscanner.helpers.ImageUtils
 import com.octo.rdo.opencvroot.documentscanner.libraries.NativeClass
+import com.octo.rdo.opencvroot.documentscanner.libraries.PerspectiveTransformation
 import com.octo.rdo.opencvroot.documentscanner.libraries.PolygonView
-import kotlinx.coroutines.flow.flow
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
 import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.MatOfPoint2f
+import org.opencv.core.Point
 import org.opencv.imgproc.Imgproc
-import java.io.File
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -61,6 +63,8 @@ class MainActivity : AppCompatActivity() {
 
         // Set up the listeners for take photo and video capture buttons
         findViewById<Button>(R.id.image_capture_button).setOnClickListener { takePhoto() }
+        findViewById<Button>(R.id.crop_button).setOnClickListener { crop() }
+
 
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
@@ -127,6 +131,11 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun crop(){
+        val croppedBitmap = getCroppedImage()
+        findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(croppedBitmap)
+        getCroppedImage()
+    }
     private fun switchToImagePreview(savedUri: Uri) {
         try {
             val inputStream: InputStream? = contentResolver.openInputStream(savedUri)
@@ -134,40 +143,10 @@ class MainActivity : AppCompatActivity() {
             findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(bitmap)
             findViewById<ImageView>(R.id.viewImageForBitmap).visibility = View.VISIBLE
             findViewById<PreviewView>(R.id.viewFinder).visibility = View.GONE
-            //detectEdges(bitmap)
             initializeCropping(bitmap)
         } catch (e: Throwable) {
             Log.e("YOLO YOLO", null, e)
         }
-    }
-
-    private fun detectEdges(bitmap: Bitmap) {
-        val rgba = Mat()
-        Utils.bitmapToMat(bitmap, rgba)
-        val edges = Mat(rgba.size(), CvType.CV_8UC1)
-
-        // filtre color
-        Imgproc.cvtColor(rgba, edges, Imgproc.COLOR_RGB2GRAY, 4) // edge filter
-
-        //val squareView = findViewById<DrawView>(R.id.viewImageForBitmapSquare)
-       // squareView.setSquare(200f, 400f, 250f, 400f)
-
-        // detect edge - but not in image
-        Imgproc.Canny(
-            edges, // 8-bit source image
-            edges,//output edge map; single channels 8-bit image, which has the same size as image
-            80.0,
-            100.0
-        )
-
-
-        findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(bitmap)
-        val resultBitmap: Bitmap =
-            Bitmap.createBitmap(edges.cols(), edges.rows(), Bitmap.Config.ARGB_8888)
-        Utils.matToBitmap(edges, resultBitmap)
-        val contour = OpenCVUtils.getContourEdgePoints(resultBitmap)
-        Log.e("YOLO, YOLO", "CONTOUR result $contour")
-        findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(resultBitmap)
     }
 
     private fun startCamera() {
@@ -182,23 +161,18 @@ class MainActivity : AppCompatActivity() {
                 .also {
                     it.setSurfaceProvider(findViewById<PreviewView>(R.id.viewFinder).surfaceProvider)
                 }
-
             imageCapture = ImageCapture.Builder().build()
 
             // Select back camera as a default
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
             try {
                 // Unbind use cases before rebinding
                 cameraProvider.unbindAll()
-
                 // Bind use cases to camera
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
-
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
-
         }, ContextCompat.getMainExecutor(this))
     }
 
@@ -210,13 +184,7 @@ class MainActivity : AppCompatActivity() {
             imageView.width,
             imageView.height
         )
-
         imageView.setImageBitmap(scaledBitmap)
-
-
-        val contour = getContourEdgePoints(scaledBitmap)
-        Log.e("YOLO, YOLO", "CONTOUR $contour")
-
         val tempBitmap = (imageView.drawable as BitmapDrawable).bitmap
         val pointFs = getEdgePointsOfBitmap(tempBitmap, polygonView)
         polygonView.points = pointFs
@@ -247,10 +215,31 @@ class MainActivity : AppCompatActivity() {
         polygonView: PolygonView
     ): Map<Int, PointF>? {
         // val pointFs: List<PointF> = getContourEdgePoints(tempBitmap) -- contour de l'image view
-        val pointFs: List<PointF> = OpenCVUtils.getContourEdgePoints(tempBitmap).map { // contour du document
-             PointF(it.x.toFloat(), it.y.toFloat())
-        }
+        val pointFs: List<PointF> = getDocumentContour(tempBitmap)
+        Log.e("YOLO, YOLO", "CONTOUR : $pointFs")
         return orderedValidEdgePoints(polygonView, tempBitmap, pointFs)
+    }
+
+    private fun getDocumentContour(tempBitmap: Bitmap): List<PointF> {
+        val rgba = Mat()
+        Utils.bitmapToMat(tempBitmap, rgba)
+        val edges = Mat(rgba.size(), CvType.CV_8UC1)
+        Imgproc.cvtColor(rgba, edges, Imgproc.COLOR_RGB2GRAY, 4) // change color of image
+        Imgproc.Canny(
+            edges, // 8-bit source image
+            edges,//output edge map; single channels 8-bit image, which has the same size as image
+            80.0,
+            100.0
+        )
+
+        val resultBitmap: Bitmap =
+            Bitmap.createBitmap(edges.cols(), edges.rows(), Bitmap.Config.ARGB_8888)
+        Utils.matToBitmap(edges, resultBitmap)
+        //findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(resultBitmap) //TMP
+
+        return OpenCVUtils.getContourEdgePoints(resultBitmap).map { // contour du document
+            PointF(it.x.toFloat(), it.y.toFloat())
+        }
     }
 
     private fun getContourEdgePoints(tempBitmap: Bitmap): List<PointF> {
@@ -275,6 +264,7 @@ class MainActivity : AppCompatActivity() {
         }
         return orderedPoints
     }
+
     private fun getOutlinePoints(tempBitmap: Bitmap): Map<Int, PointF> {
         val outlinePoints: MutableMap<Int, PointF> = HashMap()
         outlinePoints[0] = PointF(0f, 0f)
@@ -282,6 +272,64 @@ class MainActivity : AppCompatActivity() {
         outlinePoints[2] = PointF(0f, tempBitmap.height.toFloat())
         outlinePoints[3] = PointF(tempBitmap.width.toFloat(), tempBitmap.height.toFloat())
         return outlinePoints
+    }
+
+
+    private fun getCroppedImage(): Bitmap? {
+        val polygonView = findViewById<PolygonView>(R.id.polygon_view)
+        val imageView = findViewById<ImageView>(R.id.viewImageForBitmap)
+        val tempBitmap = (imageView.drawable as BitmapDrawable).bitmap
+
+        val points: Map<Int, PointF> = polygonView.points
+        val xRatio: Float = tempBitmap.width.toFloat() / imageView.width
+        val yRatio: Float = 1f//tempBitmap.height.toFloat() / imageView.height
+        val x1 = points[0]!!.x * xRatio
+        val x2 = points[1]!!.x * xRatio
+        val x3 = points[2]!!.x * xRatio
+        val x4 = points[3]!!.x * xRatio
+        val y1 = points[0]!!.y * yRatio
+        val y2 = points[1]!!.y * yRatio
+        val y3 = points[2]!!.y * yRatio
+        val y4 = points[3]!!.y * yRatio
+        val finalBitmap: Bitmap = tempBitmap.copy(tempBitmap.config, true)
+        return getScannedBitmap(finalBitmap, x1, y1, x2, y2, x3, y3, x4, y4)
+    }
+
+    private fun getScannedBitmap( //TODO: Move to native class
+        bitmap: Bitmap?,
+        x1: Float,
+        y1: Float,
+        x2: Float,
+        y2: Float,
+        x3: Float,
+        y3: Float,
+        x4: Float,
+        y4: Float
+    ): Bitmap? {
+
+      /*  val uncropped: Mat = ImageUtils.bitmapToMat(bitmap)
+        val width = 20//x4 - x1
+        val height = 20//y4 - y1
+        val roi = org.opencv.core.Rect(x1.toInt(), y1.toInt(), width.toInt(), height.toInt())
+        //val cropped = org.opencv.core.Mat(uncropped, org.opencv.core.Rect(0, 0, uncropped.cols(), uncropped.rows() / 2)); // NOTE: this will only give you a reference to the ROI of the original data
+        Log.e("YOLO, YOLO", "CONTOUR POINT $x1, $y1, $x2, $y2, $x3, $y3, $x4, $y4")
+        val cropped = org.opencv.core.Mat(uncropped, org.opencv.core.Rect(Point(x1.toDouble(),y1.toDouble()), Point(x4.toDouble(),y4.toDouble())))
+
+        //val cropped : Mat = org.opencv.core.Mat(uncropped, roi)
+
+        return ImageUtils.matToBitmap(cropped)*/
+        val perspective = PerspectiveTransformation()
+        val rectangle = MatOfPoint2f()
+        rectangle.fromArray(
+            Point(x1.toDouble(), y1.toDouble()), Point(
+                x2.toDouble(), y2.toDouble()
+            ), Point(x3.toDouble(), y3.toDouble()), Point(
+                x4.toDouble(),
+                y4.toDouble()
+            )
+        )
+        val dstMat: Mat = perspective.transform(ImageUtils.bitmapToMat(bitmap), rectangle)
+        return ImageUtils.matToBitmap(dstMat)
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
@@ -292,6 +340,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         cameraExecutor.shutdown()
     }
+
 
     companion object {
         private const val TAG = "CameraXApp"
