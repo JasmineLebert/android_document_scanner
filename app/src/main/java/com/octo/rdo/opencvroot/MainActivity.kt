@@ -28,7 +28,6 @@ import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.octo.rdo.opencvroot.documentscanner.libraries.NativeClass
 import com.octo.rdo.opencvroot.documentscanner.libraries.PolygonView
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
@@ -145,7 +144,7 @@ class MainActivity : AppCompatActivity() {
             findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(bitmap)
             findViewById<ImageView>(R.id.viewImageForBitmap).visibility = View.VISIBLE
             findViewById<PreviewView>(R.id.viewFinder).visibility = View.GONE
-           // detectEdges(bitmap)
+            //detectEdges(bitmap)
             initializeCropping(bitmap)
         } catch (e: Throwable) {
             Log.e("YOLO YOLO", null, e)
@@ -158,11 +157,10 @@ class MainActivity : AppCompatActivity() {
         val edges = Mat(rgba.size(), CvType.CV_8UC1)
 
         // filtre color
-        Imgproc.cvtColor(rgba, edges, Imgproc.COLOR_RGB2GRAY, 4)
-        val contour = getContourEdgePoints(bitmap)
-        Log.e("YOLO, YOLO", "CONTOUR $contour")
-        val squareView = findViewById<DrawView>(R.id.viewImageForBitmapSquare)
-        squareView.setSquare(200f, 400f, 250f, 400f)
+        Imgproc.cvtColor(rgba, edges, Imgproc.COLOR_RGB2GRAY, 4) // edge filter
+
+        //val squareView = findViewById<DrawView>(R.id.viewImageForBitmapSquare)
+       // squareView.setSquare(200f, 400f, 250f, 400f)
 
         // detect edge - but not in image
         Imgproc.Canny(
@@ -174,12 +172,12 @@ class MainActivity : AppCompatActivity() {
 
 
         findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(bitmap)
-        //findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(newBitmap)
         val resultBitmap: Bitmap =
             Bitmap.createBitmap(edges.cols(), edges.rows(), Bitmap.Config.ARGB_8888)
         Utils.matToBitmap(edges, resultBitmap)
-        // findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(resultBitmap)
-        // findViewById<ImageView>(R.id.viewImageForBitmap).visibility = View.VISIBLE
+        val contour = OpenCVUtils.getContourEdgePoints(resultBitmap)
+        Log.e("YOLO, YOLO", "CONTOUR result $contour")
+        findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(resultBitmap)
     }
 
     private fun startCamera() {
@@ -214,7 +212,7 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
-    private  fun initializeCropping(selectedImageBitmap: Bitmap) {
+    private fun initializeCropping(selectedImageBitmap: Bitmap) {
         val polygonView = findViewById<PolygonView>(R.id.polygon_view)
         val imageView = findViewById<ImageView>(R.id.viewImageForBitmap)
         val scaledBitmap: Bitmap = scaledBitmap2(
@@ -223,25 +221,29 @@ class MainActivity : AppCompatActivity() {
             imageView.height
         )//.first()
         imageView.setImageBitmap(scaledBitmap)
+
+
+        val contour = getContourEdgePoints(scaledBitmap)
+        Log.e("YOLO, YOLO", "CONTOUR $contour")
+
         //imageView.setImageBitmap(selectedImageBitmap)
         val tempBitmap = (imageView.drawable as BitmapDrawable).bitmap
-        val pointFs = getEdgePoints(tempBitmap, polygonView)
+        val pointFs = getEdgePointsOfBitmap(tempBitmap, polygonView)
         Log.e("YOLO, YOLO width", tempBitmap.width.toString())
         Log.e("YOLO, YOLO height", tempBitmap.height.toString())
         Log.e("YOLO, YOLO height", pointFs.toString())
         polygonView.points = pointFs
         polygonView.visibility = View.VISIBLE
         val padding = resources.getDimension(R.dimen.scanPadding).toInt() * 2
-        val layoutParams = FrameLayout.LayoutParams(tempBitmap.width + padding, tempBitmap.height + padding)
-       // val layoutParams = FrameLayout.LayoutParams(imageView.width, imageView.height)
-        Log.e("YOLO, YOLO", "CONTOUR ${imageView.width/4}")
-        Log.e("YOLO, YOLO", "CONTOUR ${imageView.height/4}")
+        val layoutParams =
+            FrameLayout.LayoutParams(tempBitmap.width + padding, tempBitmap.height + padding)
+
         layoutParams.gravity = Gravity.CENTER
         polygonView.layoutParams = layoutParams
         polygonView.setPointColor(Color.BLUE)
     }
 
-    private fun scaledBitmap2(bitmap: Bitmap, width: Int, height: Int) : Bitmap {
+    private fun scaledBitmap2(bitmap: Bitmap, width: Int, height: Int): Bitmap {
         val m = Matrix()
         m.setRectToRect(
             RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat()), RectF(
@@ -252,6 +254,7 @@ class MainActivity : AppCompatActivity() {
         )
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, m, true)
     }
+
     private fun scaledBitmap(bitmap: Bitmap, width: Int, height: Int) = flow<Bitmap> {
         val m = Matrix()
         m.setRectToRect(
@@ -264,8 +267,14 @@ class MainActivity : AppCompatActivity() {
         emit(Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, m, true))
     }
 
-    private fun getEdgePoints(tempBitmap: Bitmap, polygonView: PolygonView): Map<Int, PointF>? {
-        val pointFs: List<PointF> = getContourEdgePoints(tempBitmap)
+    private fun getEdgePointsOfBitmap(
+        tempBitmap: Bitmap,
+        polygonView: PolygonView
+    ): Map<Int, PointF>? {
+       // val pointFs: List<PointF> = getContourEdgePoints(tempBitmap)
+        val pointFs: List<PointF> = OpenCVUtils.getContourEdgePoints(tempBitmap).map {
+             PointF(it.x.toFloat(), it.y.toFloat())
+        }
         return orderedValidEdgePoints(polygonView, tempBitmap, pointFs)
     }
 
@@ -276,11 +285,7 @@ class MainActivity : AppCompatActivity() {
         val result: MutableList<PointF> = ArrayList()
         for (i in points.indices) {
             result.add(PointF(points[i].x.toFloat(), points[i].y.toFloat()))
-       }
-      /*  result.add(0,PointF(0f,0f))
-        result.add(0,PointF(500f,0f))
-        result.add(0,PointF(0f,500f))
-        result.add(0,PointF(500f,500f))*/
+        }
         return result
     }
 

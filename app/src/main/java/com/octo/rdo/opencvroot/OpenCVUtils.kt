@@ -12,7 +12,7 @@ import java.util.*
 
 class OpenCVUtils {
     companion object {
-        fun getContourEdgePoints(bitmap: Bitmap): List<Point>? {
+        fun getContourEdgePoints(bitmap: Bitmap): List<Point> {
             var hasContour = false
             var matReceipt = Mat()
             matReceipt = convertBitmapToMat(bitmap)
