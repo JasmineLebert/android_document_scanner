@@ -30,12 +30,9 @@ import com.octo.rdo.opencvroot.documentscanner.libraries.NativeClass
 import com.octo.rdo.opencvroot.documentscanner.libraries.OpenCVUtils
 import com.octo.rdo.opencvroot.documentscanner.helpers.PerspectiveTransformationUtils
 import org.opencv.android.OpenCVLoader
-import org.opencv.android.Utils
-import org.opencv.core.CvType
 import org.opencv.core.Mat
 import org.opencv.core.MatOfPoint2f
 import org.opencv.core.Point
-import org.opencv.imgproc.Imgproc
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
@@ -136,7 +133,7 @@ class MainActivity : AppCompatActivity() {
         imageView.setImageBitmap(croppedBitmap)
 
         //Reset polygon view
-        var tempBitmap = (imageView.drawable as BitmapDrawable).bitmap
+        val tempBitmap = (imageView.drawable as BitmapDrawable).bitmap
         placePointOnPolygonView(tempBitmap, false)
     }
 
@@ -147,9 +144,8 @@ class MainActivity : AppCompatActivity() {
             findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(bitmap)
             findViewById<ImageView>(R.id.viewImageForBitmap).visibility = View.VISIBLE
             findViewById<PreviewView>(R.id.viewFinder).visibility = View.GONE
-            //val rotateBitmap = OpenCVUtils.rotate(bitmap, 90)
-            //initializeCropping(rotateBitmap)
-            initializeCropping(bitmap)
+            val rotateBitmap = OpenCVUtils.rotate(bitmap, 90)
+            initializeCropping(rotateBitmap)
         } catch (e: Throwable) {
             Log.e("YOLO YOLO", null, e)
         }
@@ -282,63 +278,19 @@ class MainActivity : AppCompatActivity() {
         return outlinePoints
     }
 
-
     private fun getCroppedImage(): Bitmap? {
         val polygonView = findViewById<PolygonView>(R.id.polygon_view)
         val imageView = findViewById<ImageView>(R.id.viewImageForBitmap)
         val tempBitmap = (imageView.drawable as BitmapDrawable).bitmap
 
         val points: Map<Int, PointF> = polygonView.points
-        val xRatio: Float = tempBitmap.width.toFloat() / imageView.width
-        val yRatio: Float = 1f//tempBitmap.height.toFloat() / imageView.height
-        val x1 = points[0]!!.x * xRatio
-        val x2 = points[1]!!.x * xRatio
-        val x3 = points[2]!!.x * xRatio
-        val x4 = points[3]!!.x * xRatio
-        val y1 = points[0]!!.y * yRatio
-        val y2 = points[1]!!.y * yRatio
-        val y3 = points[2]!!.y * yRatio
-        val y4 = points[3]!!.y * yRatio
+        val point1 = Point(points[0]!!.x.toDouble(), points[0]!!.y.toDouble())
+        val point2 = Point(points[1]!!.x.toDouble(), points[1]!!.y.toDouble())
+        // les points 3 et 4 sont inversés pour le moment car openCV pas dans le même sens que polygonView
+        val point3 = Point(points[3]!!.x.toDouble(), points[3]!!.y.toDouble())
+        val point4 = Point(points[2]!!.x.toDouble(), points[2]!!.y.toDouble())
         val finalBitmap: Bitmap = tempBitmap.copy(tempBitmap.config, true)
-        return getScannedBitmap(finalBitmap, x1, y1, x2, y2, x3, y3, x4, y4)
-    }
-
-    private fun getScannedBitmap( //TODO: Move to native class
-        bitmap: Bitmap?,
-        x1: Float,
-        y1: Float,
-        x2: Float,
-        y2: Float,
-        x3: Float,
-        y3: Float,
-        x4: Float,
-        y4: Float
-    ): Bitmap? {
-
-        /*  val uncropped: Mat = ImageUtils.bitmapToMat(bitmap)
-          val width = 20//x4 - x1
-          val height = 20//y4 - y1
-          val roi = org.opencv.core.Rect(x1.toInt(), y1.toInt(), width.toInt(), height.toInt())
-          //val cropped = org.opencv.core.Mat(uncropped, org.opencv.core.Rect(0, 0, uncropped.cols(), uncropped.rows() / 2)); // NOTE: this will only give you a reference to the ROI of the original data
-          Log.e("YOLO, YOLO", "CONTOUR POINT $x1, $y1, $x2, $y2, $x3, $y3, $x4, $y4")
-          val cropped = org.opencv.core.Mat(uncropped, org.opencv.core.Rect(Point(x1.toDouble(),y1.toDouble()), Point(x4.toDouble(),y4.toDouble())))
-
-          //val cropped : Mat = org.opencv.core.Mat(uncropped, roi)
-
-          return ImageUtils.matToBitmap(cropped)*/
-        Log.e("YOLO, YOLO", "CONTOUR POINT $x1, $y1, $x2, $y2, $x3, $y3, $x4, $y4")
-        val perspective =
-            PerspectiveTransformationUtils()
-        val rectangle = MatOfPoint2f()
-        rectangle.fromArray(
-            Point(x1.toDouble(), y1.toDouble()),
-            Point(x2.toDouble(), y2.toDouble()),
-            Point(x4.toDouble(), y4.toDouble()),
-            Point(x3.toDouble(), y3.toDouble()),
-        )
-        val dstMat: Mat = perspective.transform(ImageUtils.bitmapToMat(bitmap), rectangle)
-
-        return ImageUtils.matToBitmap(dstMat)
+        return OpenCVUtils.getScannedBitmap(finalBitmap, point1, point2, point3, point4)
     }
 
     private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {

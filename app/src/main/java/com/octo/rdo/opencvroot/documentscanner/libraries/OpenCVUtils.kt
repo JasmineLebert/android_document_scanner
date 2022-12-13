@@ -4,6 +4,8 @@ import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.graphics.PointF
 import android.graphics.RectF
+import com.octo.rdo.opencvroot.documentscanner.helpers.ImageUtils
+import com.octo.rdo.opencvroot.documentscanner.helpers.PerspectiveTransformationUtils
 import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
@@ -361,127 +363,28 @@ class OpenCVUtils {
             } catch (e: Exception) {
                 return bitmap
             }
-
         }
 
-        fun cropReceiptByFourPoints(
-            receipt: Bitmap,
-            cornerPoints: ArrayList<Point>?,
-            screenWidth: Int,
-            screenHeight: Int
+        fun getScannedBitmap(
+            bitmap: Bitmap?,
+            point1 : Point,
+            point2 : Point,
+            point3 : Point,
+            point4 : Point,
         ): Bitmap? {
-            if (cornerPoints == null || cornerPoints.size != 4) {
-                return null
-            }
-            val originalReceiptMat = convertBitmapToMat(receipt)
-
-            val widthRatio = receipt.width.toDouble() / screenWidth.toDouble()
-            val heightRatio = receipt.height.toDouble() / screenHeight.toDouble()
-
-            val corners = ArrayList<Point>()
-            for (i in cornerPoints.indices) {
-                corners.add(Point(cornerPoints[i].x * widthRatio, cornerPoints[i].y * heightRatio))
-            }
-
-            //        for (Point corner : corners) {
-            //            Core.circle(originalReceiptMat, corner, (int) 20, new Scalar(216, 162, 162), 20);
-            //        }
-            //        Bitmap temp = convertMatToBitmap(originalReceiptMat);
-
-            //2
-            val srcPoints = Converters.vector_Point2f_to_Mat(corners)
-            val maxY = getPointWithMaxCorY(corners)!!.y
-            val minY = getPointWithMinCorY(corners)!!.y
-            val maxX = getPointWithMaxCorX(corners)!!.x
-            val minX = getPointWithMinCorX(corners)!!.x
-
-            val maxWidth = maxX - minX
-            val maxHeight = maxY - minY
-
-            val correctedImage = Mat(maxHeight.toInt(), maxWidth.toInt(), originalReceiptMat.type())
-
-            val destPoints = Converters.vector_Point2f_to_Mat(
-                Arrays.asList(
-                    Point(0.0, 0.0),
-                    Point(maxWidth - 1, 0.0),
-                    Point(maxWidth - 1, maxHeight - 1),
-                    Point(0.0, maxHeight - 1)
-                )
+            val perspective =
+                PerspectiveTransformationUtils()
+            val rectangle = MatOfPoint2f()
+            rectangle.fromArray(
+                point1,
+                point2,
+                point3,
+                point4
             )
+            val dstMat: Mat = perspective.transform(ImageUtils.bitmapToMat(bitmap), rectangle)
 
-            val transformation = Imgproc.getPerspectiveTransform(
-                srcPoints,
-                destPoints
-            )
-
-            Imgproc.warpPerspective(
-                originalReceiptMat, correctedImage, transformation,
-                correctedImage.size()
-            )
-            return convertMatToBitmap(correctedImage)
+            return ImageUtils.matToBitmap(dstMat)
         }
 
-        fun getPointWithMaxCorY(listPoint: List<Point>?): Point? {
-            if (listPoint == null || listPoint.size == 0) {
-                return null
-            }
-            var maxY = listPoint[0].y
-            var maxYPos = 0
-            for (i in listPoint.indices) {
-                if (maxY < listPoint[i].y) {
-                    maxY = listPoint[i].y
-                    maxYPos = i
-                }
-            }
-            return listPoint[maxYPos]
-        }
-
-        fun getPointWithMinCorY(listPoint: List<Point>?): Point? {
-            if (listPoint == null || listPoint.size == 0) {
-                return null
-            }
-            if (listPoint == null || listPoint.size == 0) {
-                return null
-            }
-            var minY = listPoint[0].y
-            var minYPos = 0
-            for (i in listPoint.indices) {
-                if (minY > listPoint[i].y) {
-                    minY = listPoint[i].y
-                    minYPos = i
-                }
-            }
-            return listPoint[minYPos]
-        }
-
-        fun getPointWithMaxCorX(listPoint: List<Point>?): Point? {
-            if (listPoint == null || listPoint.size == 0) {
-                return null
-            }
-            var maxX = listPoint[0].x
-            var maxXPos = 0
-            for (i in listPoint.indices) {
-                if (maxX < listPoint[i].x) {
-                    maxX = listPoint[i].x
-                    maxXPos = i
-                }
-            }
-            return listPoint[maxXPos]
-        }
-
-        fun getPointWithMinCorX(listPoint: List<Point>?): Point? {
-            if (listPoint == null || listPoint.size == 0) {
-                return null
-            }
-            var minX = listPoint[0].x
-            var minXPos = 0
-            for (i in listPoint.indices) {
-                if (minX > listPoint[i].x) {
-                    minX = listPoint[i].x
-                    minXPos = i
-                }
-            }
-            return listPoint[minXPos]
-        }
     }
 }

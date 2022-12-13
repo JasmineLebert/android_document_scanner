@@ -5,6 +5,7 @@ import com.octo.rdo.opencvroot.documentscanner.helpers.MathUtils;
 import com.octo.rdo.opencvroot.documentscanner.helpers.PerspectiveTransformationUtils;
 
 import android.graphics.Bitmap;
+
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -31,13 +32,6 @@ public class NativeClass {
     private static final double AREA_UPPER_THRESHOLD = 0.98;
     private static final double DOWNSCALE_IMAGE_SIZE = 600f;
 
-    public Bitmap getScannedBitmap(Bitmap bitmap, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
-        PerspectiveTransformationUtils perspective = new PerspectiveTransformationUtils();
-        MatOfPoint2f rectangle = new MatOfPoint2f();
-        rectangle.fromArray(new Point(x1, y1), new Point(x2, y2), new Point(x3, y3), new Point(x4, y4));
-        Mat dstMat = perspective.transform(ImageUtils.bitmapToMat(bitmap), rectangle);
-        return ImageUtils.matToBitmap(dstMat);
-    }
 
     private static Comparator<MatOfPoint2f> AreaDescendingComparator = new Comparator<MatOfPoint2f>() {
         public int compare(MatOfPoint2f m1, MatOfPoint2f m2) {
@@ -68,7 +62,6 @@ public class NativeClass {
         return result;
     }
 
-    //public native float[] getPoints(Bitmap bitmap);
     public List<MatOfPoint2f> getPoints(Mat src) {
 
         // Blur the image to filter out the noise.
@@ -132,7 +125,6 @@ public class NativeClass {
         }
 
         return rectangles;
-
     }
 
     private boolean isRectangle(MatOfPoint2f polygon, int srcArea) {
@@ -162,5 +154,4 @@ public class NativeClass {
 
         return !(maxCosine >= 0.3);
     }
-
 }
