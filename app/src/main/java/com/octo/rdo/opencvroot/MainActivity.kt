@@ -131,11 +131,16 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun crop(){
+    private fun crop() {
         val croppedBitmap = getCroppedImage()
-        findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(croppedBitmap)
-        getCroppedImage()
+        val imageView = findViewById<ImageView>(R.id.viewImageForBitmap)
+        imageView.setImageBitmap(croppedBitmap)
+
+        //Reset polygon view
+        var tempBitmap = (imageView.drawable as BitmapDrawable).bitmap
+        placePointOnPolygonView(tempBitmap, false)
     }
+
     private fun switchToImagePreview(savedUri: Uri) {
         try {
             val inputStream: InputStream? = contentResolver.openInputStream(savedUri)
@@ -177,6 +182,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initializeCropping(selectedImageBitmap: Bitmap) {
+        placePointOnPolygonView(selectedImageBitmap, true)
+    }
+
+    private fun placePointOnPolygonView(selectedImageBitmap: Bitmap, isCropping: Boolean) {
         val polygonView = findViewById<PolygonView>(R.id.polygon_view)
         val imageView = findViewById<ImageView>(R.id.viewImageForBitmap)
         val scaledBitmap: Bitmap = scaledBitmap(
@@ -186,7 +195,7 @@ class MainActivity : AppCompatActivity() {
         )
         imageView.setImageBitmap(scaledBitmap)
         val tempBitmap = (imageView.drawable as BitmapDrawable).bitmap
-        val pointFs = getEdgePointsOfBitmap(tempBitmap, polygonView)
+        val pointFs = getEdgePointsOfBitmap(tempBitmap, polygonView, isCropping)
         polygonView.points = pointFs
         polygonView.visibility = View.VISIBLE
         val padding = resources.getDimension(R.dimen.scanPadding).toInt() * 2
@@ -212,10 +221,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun getEdgePointsOfBitmap(
         tempBitmap: Bitmap,
+        polygonView: PolygonView,
+        isCropping: Boolean,
+    ): Map<Int, PointF>? {
+        val pointFs: List<PointF> = if (isCropping) {
+            getDocumentContour(tempBitmap)
+        } else {
+            getContourEdgePoints(tempBitmap) // contour de l'image view
+        }
+
+        Log.e("YOLO, YOLO", "CONTOUR : $pointFs")
+        return orderedValidEdgePoints(polygonView, tempBitmap, pointFs)
+    }
+
+    private fun getContourOfBitmap(
+        tempBitmap: Bitmap,
         polygonView: PolygonView
     ): Map<Int, PointF>? {
-        // val pointFs: List<PointF> = getContourEdgePoints(tempBitmap) -- contour de l'image view
-        val pointFs: List<PointF> = getDocumentContour(tempBitmap)
+        val pointFs: List<PointF> = getContourEdgePoints(tempBitmap)
         Log.e("YOLO, YOLO", "CONTOUR : $pointFs")
         return orderedValidEdgePoints(polygonView, tempBitmap, pointFs)
     }
@@ -307,17 +330,17 @@ class MainActivity : AppCompatActivity() {
         y4: Float
     ): Bitmap? {
 
-      /*  val uncropped: Mat = ImageUtils.bitmapToMat(bitmap)
-        val width = 20//x4 - x1
-        val height = 20//y4 - y1
-        val roi = org.opencv.core.Rect(x1.toInt(), y1.toInt(), width.toInt(), height.toInt())
-        //val cropped = org.opencv.core.Mat(uncropped, org.opencv.core.Rect(0, 0, uncropped.cols(), uncropped.rows() / 2)); // NOTE: this will only give you a reference to the ROI of the original data
-        Log.e("YOLO, YOLO", "CONTOUR POINT $x1, $y1, $x2, $y2, $x3, $y3, $x4, $y4")
-        val cropped = org.opencv.core.Mat(uncropped, org.opencv.core.Rect(Point(x1.toDouble(),y1.toDouble()), Point(x4.toDouble(),y4.toDouble())))
+        /*  val uncropped: Mat = ImageUtils.bitmapToMat(bitmap)
+          val width = 20//x4 - x1
+          val height = 20//y4 - y1
+          val roi = org.opencv.core.Rect(x1.toInt(), y1.toInt(), width.toInt(), height.toInt())
+          //val cropped = org.opencv.core.Mat(uncropped, org.opencv.core.Rect(0, 0, uncropped.cols(), uncropped.rows() / 2)); // NOTE: this will only give you a reference to the ROI of the original data
+          Log.e("YOLO, YOLO", "CONTOUR POINT $x1, $y1, $x2, $y2, $x3, $y3, $x4, $y4")
+          val cropped = org.opencv.core.Mat(uncropped, org.opencv.core.Rect(Point(x1.toDouble(),y1.toDouble()), Point(x4.toDouble(),y4.toDouble())))
 
-        //val cropped : Mat = org.opencv.core.Mat(uncropped, roi)
+          //val cropped : Mat = org.opencv.core.Mat(uncropped, roi)
 
-        return ImageUtils.matToBitmap(cropped)*/
+          return ImageUtils.matToBitmap(cropped)*/
         val perspective = PerspectiveTransformation()
         val rectangle = MatOfPoint2f()
         rectangle.fromArray(
