@@ -24,12 +24,6 @@
             android:layout_height="match_parent"
             android:visibility="visible" />
 
-        <com.octo.rdo.opencvroot.DrawView
-            android:id="@+id/viewImageForBitmapSquare"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="visible" />
-
         <com.octo.rdo.opencvroot.documentscanner.libraries.PolygonView
             android:id="@+id/polygon_view"
             android:layout_width="match_parent"

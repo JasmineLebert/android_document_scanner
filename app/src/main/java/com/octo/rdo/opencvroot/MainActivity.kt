@@ -129,16 +129,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun switchToImagePreview(savedUri: Uri) {
         try {
-            //val path = File(savedUri.path).path
-            val file: File =
-                File(
-                    (this.externalCacheDir?.path
-                        ?: "") + File.separator + System.currentTimeMillis() + ".jpg"
-                )
-            val path = file.path
-            val path2 = savedUri.path;
-            //val bitmap = BitmapFactory.decodeFile(savedUri.encodedPath + ".jpg")
-            val path3 = savedUri.scheme
             val inputStream: InputStream? = contentResolver.openInputStream(savedUri)
             val bitmap = BitmapFactory.decodeStream(inputStream)
             findViewById<ImageView>(R.id.viewImageForBitmap).setImageBitmap(bitmap)
@@ -215,23 +205,20 @@ class MainActivity : AppCompatActivity() {
     private fun initializeCropping(selectedImageBitmap: Bitmap) {
         val polygonView = findViewById<PolygonView>(R.id.polygon_view)
         val imageView = findViewById<ImageView>(R.id.viewImageForBitmap)
-        val scaledBitmap: Bitmap = scaledBitmap2(
+        val scaledBitmap: Bitmap = scaledBitmap(
             selectedImageBitmap,
             imageView.width,
             imageView.height
-        )//.first()
+        )
+
         imageView.setImageBitmap(scaledBitmap)
 
 
         val contour = getContourEdgePoints(scaledBitmap)
         Log.e("YOLO, YOLO", "CONTOUR $contour")
 
-        //imageView.setImageBitmap(selectedImageBitmap)
         val tempBitmap = (imageView.drawable as BitmapDrawable).bitmap
         val pointFs = getEdgePointsOfBitmap(tempBitmap, polygonView)
-        Log.e("YOLO, YOLO width", tempBitmap.width.toString())
-        Log.e("YOLO, YOLO height", tempBitmap.height.toString())
-        Log.e("YOLO, YOLO height", pointFs.toString())
         polygonView.points = pointFs
         polygonView.visibility = View.VISIBLE
         val padding = resources.getDimension(R.dimen.scanPadding).toInt() * 2
@@ -243,7 +230,7 @@ class MainActivity : AppCompatActivity() {
         polygonView.setPointColor(Color.BLUE)
     }
 
-    private fun scaledBitmap2(bitmap: Bitmap, width: Int, height: Int): Bitmap {
+    private fun scaledBitmap(bitmap: Bitmap, width: Int, height: Int): Bitmap {
         val m = Matrix()
         m.setRectToRect(
             RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat()), RectF(
@@ -255,24 +242,12 @@ class MainActivity : AppCompatActivity() {
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, m, true)
     }
 
-    private fun scaledBitmap(bitmap: Bitmap, width: Int, height: Int) = flow<Bitmap> {
-        val m = Matrix()
-        m.setRectToRect(
-            RectF(0f, 0f, bitmap.width.toFloat(), bitmap.height.toFloat()), RectF(
-                0f, 0f,
-                width.toFloat(),
-                height.toFloat()
-            ), Matrix.ScaleToFit.CENTER
-        )
-        emit(Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, m, true))
-    }
-
     private fun getEdgePointsOfBitmap(
         tempBitmap: Bitmap,
         polygonView: PolygonView
     ): Map<Int, PointF>? {
-       // val pointFs: List<PointF> = getContourEdgePoints(tempBitmap)
-        val pointFs: List<PointF> = OpenCVUtils.getContourEdgePoints(tempBitmap).map {
+        // val pointFs: List<PointF> = getContourEdgePoints(tempBitmap) -- contour de l'image view
+        val pointFs: List<PointF> = OpenCVUtils.getContourEdgePoints(tempBitmap).map { // contour du document
              PointF(it.x.toFloat(), it.y.toFloat())
         }
         return orderedValidEdgePoints(polygonView, tempBitmap, pointFs)
@@ -331,45 +306,5 @@ class MainActivity : AppCompatActivity() {
                     add(WRITE_EXTERNAL_STORAGE)
                 }
             }.toTypedArray()
-    }
-}
-
-
-class DrawView @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : View(context, attrs, defStyleAttr) {
-
-    var left = 0f;
-    var right = 0f;
-    var top = 0f;
-    var bottom = 0f;
-
-    var paint: Paint = Paint()
-    public override fun onDraw(canvas: Canvas) {
-        paint.setColor(Color.RED)
-        paint.setStrokeWidth(3f)
-        canvas.drawRect(
-            left,
-            top,
-            right,
-            bottom,
-            paint
-        ) // un carré mais sinon drawpath voir drawable
-        //cf. https://github.com/RemiDormoy/MotionLayoutTest/blob/master/app/src/main/java/com/rdo/octo/motionlayouttest/BlobScreenActivity.kt
-    }
-
-    fun setSquare(
-        left: Float,
-        right: Float,
-        top: Float,
-        bottom: Float
-    ) {
-        this.left = left
-        this.right = right
-        this.top = top
-        this.bottom = bottom
-        invalidate()
     }
 }
