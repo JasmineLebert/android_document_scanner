@@ -1,97 +1,86 @@
-package com.octo.rdo.opencvroot.documentscanner.helpers;
+package com.octo.rdo.opencvroot.documentscanner.helpers
 
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.Point;
-import org.opencv.core.Size;
-import org.opencv.imgproc.Imgproc;
+import org.opencv.core.Mat
+import org.opencv.core.MatOfPoint2f
+import org.opencv.core.Point
+import org.opencv.core.Size
+import org.opencv.imgproc.Imgproc
+import java.util.ArrayList
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class PerspectiveTransformationUtils {
-
-    public Mat transform(Mat src, MatOfPoint2f corners) {
-        MatOfPoint2f sortedCorners = sortCorners(corners);
-        Size size = getRectangleSize(sortedCorners);
-
-        Mat result = Mat.zeros(size, src.type());
-        MatOfPoint2f imageOutline = getOutline(result);
-
-        Mat transformation = Imgproc.getPerspectiveTransform(sortedCorners, imageOutline);
-        Imgproc.warpPerspective(src, result, transformation, size);
-
-        return result;
+class PerspectiveTransformationUtils {
+    fun transform(src: Mat, corners: MatOfPoint2f): Mat {
+        val sortedCorners = sortCorners(corners)
+        val size = getRectangleSize(sortedCorners)
+        val result = Mat.zeros(size, src.type())
+        val imageOutline = getOutline(result)
+        val transformation = Imgproc.getPerspectiveTransform(sortedCorners, imageOutline)
+        Imgproc.warpPerspective(src, result, transformation, size)
+        return result
     }
 
-    private Size getRectangleSize(MatOfPoint2f rectangle) {
-        Point[] corners = rectangle.toArray();
-
-        double top = getDistance(corners[0], corners[1]);
-        double right = getDistance(corners[1], corners[2]);
-        double bottom = getDistance(corners[2], corners[3]);
-        double left = getDistance(corners[3], corners[0]);
-
-        double averageWidth = (top + bottom) / 2f;
-        double averageHeight = (right + left) / 2f;
-
-        return new Size(new Point(averageWidth, averageHeight));
+    private fun getRectangleSize(rectangle: MatOfPoint2f): Size {
+        val corners = rectangle.toArray()
+        val top = getDistance(corners[0], corners[1])
+        val right = getDistance(corners[1], corners[2])
+        val bottom = getDistance(corners[2], corners[3])
+        val left = getDistance(corners[3], corners[0])
+        val averageWidth = (top + bottom) / 2f
+        val averageHeight = (right + left) / 2f
+        return Size(Point(averageWidth, averageHeight))
     }
 
-    private double getDistance(Point p1, Point p2) {
-        double dx = p2.x - p1.x;
-        double dy = p2.y - p1.y;
-        return Math.sqrt(dx * dx + dy * dy);
+    private fun getDistance(p1: Point, p2: Point): Double {
+        val dx = p2.x - p1.x
+        val dy = p2.y - p1.y
+        return Math.sqrt(dx * dx + dy * dy)
     }
 
-    private MatOfPoint2f getOutline(Mat image) {
-        Point topLeft = new Point(0, 0);
-        Point topRight = new Point(image.cols(), 0);
-        Point bottomRight = new Point(image.cols(), image.rows());
-        Point bottomLeft = new Point(0, image.rows());
-        Point[] points = {topLeft, topRight, bottomRight, bottomLeft};
-
-        MatOfPoint2f result = new MatOfPoint2f();
-        result.fromArray(points);
-
-        return result;
+    private fun getOutline(image: Mat): MatOfPoint2f {
+        val topLeft = Point(0.0, 0.0)
+        val topRight = Point(image.cols().toDouble(), 0.0)
+        val bottomRight = Point(
+            image.cols().toDouble(), image.rows().toDouble()
+        )
+        val bottomLeft = Point(0.0, image.rows().toDouble())
+        val points = arrayOf(topLeft, topRight, bottomRight, bottomLeft)
+        val result = MatOfPoint2f()
+        result.fromArray(*points)
+        return result
     }
 
-    private MatOfPoint2f sortCorners(MatOfPoint2f corners) {
-        Point center = getMassCenter(corners);
-        List<Point> points = corners.toList();
-        List<Point> topPoints = new ArrayList<Point>();
-        List<Point> bottomPoints = new ArrayList<Point>();
-
-        for (Point point : points) {
+    private fun sortCorners(corners: MatOfPoint2f): MatOfPoint2f {
+        val center = getMassCenter(corners)
+        val points = corners.toList()
+        val topPoints: MutableList<Point> = ArrayList()
+        val bottomPoints: MutableList<Point> = ArrayList()
+        for (point in points) {
             if (point.y < center.y) {
-                topPoints.add(point);
+                topPoints.add(point)
             } else {
-                bottomPoints.add(point);
+                bottomPoints.add(point)
             }
         }
-
-        Point topLeft = topPoints.get(0).x > topPoints.get(1).x ? topPoints.get(1) : topPoints.get(0);
-        Point topRight = topPoints.get(0).x > topPoints.get(1).x ? topPoints.get(0) : topPoints.get(1);
-        Point bottomLeft = bottomPoints.get(0).x > bottomPoints.get(1).x ? bottomPoints.get(1) : bottomPoints.get(0);
-        Point bottomRight = bottomPoints.get(0).x > bottomPoints.get(1).x ? bottomPoints.get(0) : bottomPoints.get(1);
-
-        MatOfPoint2f result = new MatOfPoint2f();
-        Point[] sortedPoints = {topLeft, topRight, bottomRight, bottomLeft};
-        result.fromArray(sortedPoints);
-
-        return result;
+        val topLeft = if (topPoints[0].x > topPoints[1].x) topPoints[1] else topPoints[0]
+        val topRight = if (topPoints[0].x > topPoints[1].x) topPoints[0] else topPoints[1]
+        val bottomLeft =
+            if (bottomPoints[0].x > bottomPoints[1].x) bottomPoints[1] else bottomPoints[0]
+        val bottomRight =
+            if (bottomPoints[0].x > bottomPoints[1].x) bottomPoints[0] else bottomPoints[1]
+        val result = MatOfPoint2f()
+        val sortedPoints = arrayOf(topLeft, topRight, bottomRight, bottomLeft)
+        result.fromArray(*sortedPoints)
+        return result
     }
 
-    private Point getMassCenter(MatOfPoint2f points) {
-        double xSum = 0;
-        double ySum = 0;
-        List<Point> pointList = points.toList();
-        int len = pointList.size();
-        for (Point point : pointList) {
-            xSum += point.x;
-            ySum += point.y;
+    private fun getMassCenter(points: MatOfPoint2f): Point {
+        var xSum = 0.0
+        var ySum = 0.0
+        val pointList = points.toList()
+        val len = pointList.size
+        for (point in pointList) {
+            xSum += point.x
+            ySum += point.y
         }
-        return new Point(xSum / len, ySum / len);
+        return Point(xSum / len, ySum / len)
     }
 }
